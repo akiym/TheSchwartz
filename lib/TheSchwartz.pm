@@ -1,10 +1,10 @@
-# $Id: TheSchwartz.pm 117 2007-04-26 08:24:55Z bradfitz $
+# $Id: TheSchwartz.pm 122 2007-05-22 17:11:37Z bradfitz $
 
 package TheSchwartz;
 use strict;
 use fields qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration );
 
-our $VERSION = "1.03";
+our $VERSION = "1.04";
 
 use Carp qw( croak );
 use Data::ObjectDriver::Errors;

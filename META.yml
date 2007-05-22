@@ -1,13 +1,18 @@
-name: TheSchwartz
-version: 1.03
+---
 author: Six Apart <cpan@sixapart.com>
-license: perl
 distribution_type: module
-requires:
-  Data::ObjectDriver: 0.03
-  Digest::MD5: 0
-  Storable: 0
+generated_by: Module::Install version 0.65
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.3.html
+  version: 1.3
+name: TheSchwartz
 no_index:
   directory:
     - inc
-generated_by: Module::Install version 0.34
+    - t
+requires:
+  Data::ObjectDriver: 0.04
+  Digest::MD5: 0
+  Storable: 0
+version: 1.04
