@@ -1,10 +1,10 @@
-# $Id: TheSchwartz.pm 122 2007-05-22 17:11:37Z bradfitz $
+# $Id: TheSchwartz.pm 138 2008-06-16 17:36:19Z ykerherve $
 
 package TheSchwartz;
 use strict;
-use fields qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration );
+use fields qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize );
 
-our $VERSION = "1.04";
+our $VERSION = "1.07";
 
 use Carp qw( croak );
 use Data::ObjectDriver::Errors;
@@ -35,7 +35,9 @@ sub new {
     my $databases = delete $args{databases};
 
     $client->{retry_seconds} = delete $args{retry_seconds} || RETRY_DEFAULT;
+    $client->set_prioritize(delete $args{prioritize});
     $client->set_verbose(delete $args{verbose});
+    $client->set_scoreboard(delete $args{scoreboard});
     $client->{driver_cache_expiration} = delete $args{driver_cache_expiration} || 0;
     croak "unknown options ", join(', ', keys %args) if keys %args;
 
@@ -72,7 +74,8 @@ sub driver_for {
     if ($cache_duration && $client->{cached_drivers}{$hashdsn}{create_ts} && $client->{cached_drivers}{$hashdsn}{create_ts} + $cache_duration > $t) {
         $driver = $client->{cached_drivers}{$hashdsn}{driver};
     } else {
-        my $db = $client->{databases}{$hashdsn};
+        my $db = $client->{databases}{$hashdsn}
+            or croak "Ouch, I don't know about a database whose hash is $hashdsn";
         $driver = Data::ObjectDriver::Driver::DBI->new(
                 dsn      => $db->{dsn},
                 username => $db->{user},
@@ -80,8 +83,8 @@ sub driver_for {
                 ($db->{prefix} ? (prefix   => $db->{prefix}) : ()),
         );
         if ($cache_duration) {
-            $client->{cached_drivers}{$hashdsn}{driver} = $driver;            
-            $client->{cached_drivers}{$hashdsn}{create_ts} = $t;                        
+            $client->{cached_drivers}{$hashdsn}{driver} = $driver;
+            $client->{cached_drivers}{$hashdsn}{create_ts} = $t;
         }
     }
     return $driver;
@@ -165,12 +168,19 @@ sub list_jobs {
             } $driver->search('TheSchwartz::Job' => {
                 funcid        => $funcid,
                 @options
-                }, { limit => $limit });
+                }, { limit => $limit,
+                    ( $client->prioritize ? ( sort => 'priority',
+                    direction => 'descend' ) : () )
+                });
         } else {
             push @jobs, $driver->search('TheSchwartz::Job' => {
                 funcid        => $funcid,
                 @options
-                }, { limit => $limit });
+                }, { limit => $limit,
+                    ( $client->prioritize ? ( sort => 'priority',
+                        direction => 'descend' ) : () )
+                }
+            );
         }
     }
     return @jobs;
@@ -213,7 +223,11 @@ sub _find_job_with_coalescing {
                     run_after     => \ "<= $unixtime",
                     grabbed_until => \ "<= $unixtime",
                     coalesce      => { op => $op, value => $coval },
-                }, { limit => $FIND_JOB_BATCH_SIZE });
+                }, { limit => $FIND_JOB_BATCH_SIZE,
+                    ( $client->prioritize ? ( sort => 'priority',
+                        direction => 'descend' ) : () )
+                }
+            );
         };
         if ($@) {
             unless (OK_ERRORS->{ $driver->last_error || 0 }) {
@@ -252,7 +266,11 @@ sub find_job_for_workers {
                     funcid        => \@ids,
                     run_after     => \ "<= $unixtime",
                     grabbed_until => \ "<= $unixtime",
-                }, { limit => $FIND_JOB_BATCH_SIZE });
+                }, { limit => $FIND_JOB_BATCH_SIZE,
+                    ( $client->prioritize ? ( sort => 'priority',
+                    direction => 'descend' ) : () )
+                }
+            );
         };
         if ($@) {
             unless (OK_ERRORS->{ $driver->last_error || 0 }) {
@@ -266,6 +284,13 @@ sub find_job_for_workers {
         my $job = $client->_grab_a_job($hashdsn, @jobs);
         return $job if $job;
     }
+}
+
+sub get_server_time {
+    my TheSchwartz $client = shift;
+    my($driver) = @_;
+    my $unixtime_sql = $driver->dbd->sql_for_unixtime;
+    return $driver->rw_handle->selectrow_array("SELECT $unixtime_sql");
 }
 
 sub _grab_a_job {
@@ -286,8 +311,7 @@ sub _grab_a_job {
         my $worker_class = $job->funcname;
         my $old_grabbed_until = $job->grabbed_until;
 
-        my $unixtime_sql = $driver->dbd->sql_for_unixtime;
-        my $server_time = $driver->rw_handle->selectrow_array("SELECT $unixtime_sql")
+        my $server_time = $client->get_server_time($driver)
             or die "expected a server time";
 
         $job->grabbed_until($server_time + ($worker_class->grab_for || 1));
@@ -328,6 +352,12 @@ sub insert_job_to_driver {
         ## database has a separate cache, this needs to be calculated based
         ## on the hashed DSN. Also: this might fail, if the database is dead.
         $job->funcid( $client->funcname_to_id($driver, $hashdsn, $job->funcname) );
+
+        ## This is sub-optimal because of clock skew, but something is
+        ## better than a NULL value. And currently, nothing in TheSchwartz
+        ## code itself uses insert_time. TODO: use server time, but without
+        ## having to do a roundtrip just to get the server time.
+        $job->insert_time(time);
 
         ## Now, insert the job. This also might fail.
         $driver->insert($job);
@@ -490,7 +520,8 @@ sub work_once {
 
     my $class = $job ? $job->funcname : undef;
     if ($job) {
-        $job->debug("TheSchwartz::work_once got job of class '$class'");
+        my $priority = $job->priority ? ", priority " . $job->priority : "";
+        $job->debug("TheSchwartz::work_once got job of class '$class'$priority");
     } else {
         $client->debug("TheSchwartz::work_once found no jobs");
     }
@@ -566,6 +597,118 @@ sub set_verbose {
     $client->{verbose} = $logger;
 }
 
+sub scoreboard {
+    my TheSchwartz $client = shift;
+
+    return $client->{scoreboard};
+}
+
+sub set_scoreboard {
+    my TheSchwartz $client = shift;
+    my ($dir) = @_;
+
+    return unless $dir;
+
+    # They want the scoreboard but don't care where it goes
+    if (($dir eq '1') or ($dir eq 'on')) {
+        # Find someplace in tmpfs to save this
+        foreach my $d (qw(/var/run /dev/shm)) {
+            $dir = $d;
+            last if -e $dir;
+        }
+    }
+
+    $dir .= '/theschwartz';
+    unless (-e $dir) {
+        mkdir($dir, 0755) or die "Can't create scoreboard directory '$dir': $!";
+    }
+
+    $client->{scoreboard} = $dir."/scoreboard.$$";
+}
+
+sub start_scoreboard {
+    my TheSchwartz $client = shift;
+
+    # Don't do anything if we're not configured to write to the scoreboard
+    my $scoreboard = $client->scoreboard;
+    return unless $scoreboard;
+
+    # Don't do anything of (for some reason) we don't have a current job
+    my $job = $client->current_job;
+    return unless $job;
+
+    my $class = $job->funcname;
+
+    open(SB, '>', $scoreboard)
+      or $job->debug("Could not write scoreboard '$scoreboard': $!");
+    print SB join("\n", ("pid=$$",
+                         'funcname='.($class||''),
+                         'started='.($job->grabbed_until-($class->grab_for||1)),
+                         'arg='._serialize_args($job->arg),
+                        )
+                 ), "\n";
+    close(SB);
+
+    return;
+}
+
+# Quick and dirty serializer.  Don't use Data::Dumper because we don't need to
+# recurse indefinitely and we want to truncate the output produced
+sub _serialize_args {
+    my ($args) = @_;
+
+    if (ref $args) {
+        if (ref $args eq 'HASH') {
+            return join ',',
+                   map { ($_||'').'='.substr($args->{$_}||'', 0, 200) }
+                   keys %$args;
+        } elsif (ref $args eq 'ARRAY') {
+            return join ',',
+                   map { substr($_||'', 0, 200) }
+                   @$args;
+        }
+    } else {
+        return $args;
+    }
+}
+
+sub end_scoreboard {
+    my TheSchwartz $client = shift;
+
+    # Don't do anything if we're not configured to write to the scoreboard
+    my $scoreboard = $client->scoreboard;
+    return unless $scoreboard;
+
+    my $job = $client->current_job;
+
+    open(SB, '>>', $scoreboard)
+      or $job->debug("Could not append scoreboard '$scoreboard': $!");
+    print SB "done=".time."\n";
+    close(SB);
+
+    return;
+}
+
+sub clean_scoreboard {
+    my TheSchwartz $client = shift;
+
+    # Don't do anything if we're not configured to write to the scoreboard
+    my $scoreboard = $client->scoreboard;
+    return unless $scoreboard;
+
+    unlink($scoreboard);
+}
+
+sub prioritize {
+    my TheSchwartz $client = shift;
+    return $client->{prioritize};
+}
+
+sub set_prioritize {
+    my TheSchwartz $client = shift;
+    $client->{prioritize} = shift;
+}
+
 # current job being worked.  so if something dies, work_safely knows which to mark as dead.
 sub current_job {
     my TheSchwartz $client = shift;
@@ -575,6 +718,15 @@ sub current_job {
 sub set_current_job {
     my TheSchwartz $client = shift;
     $client->{current_job} = shift;
+}
+
+DESTROY {
+    foreach my $arg (@_) {
+        # Call 'clean_scoreboard' on TheSchwartz objects
+        if (ref($arg) and $arg->isa('TheSchwartz')) {
+            $arg->clean_scoreboard;
+        }
+    }
 }
 
 1;
@@ -605,14 +757,14 @@ TheSchwartz - reliable job queue
     sub work {
         my $class = shift;
         my TheSchwartz::Job $job = shift;
-        
+
         print "Workin' hard or hardly workin'? Hyuk!!\n";
 
         $job->completed();
     }
 
     package main;
-    
+
     my $client = TheSchwartz->new( databases => $DATABASE_INFO );
     $client->can_do('MyWorker');
     $client->work();
@@ -680,6 +832,12 @@ A value indicating whether to log debug messages. If C<verbose> is a coderef,
 it is called to log debug messages. If C<verbose> is not a coderef but is some
 other true value, debug messages will be sent to C<STDERR>. Otherwise, debug
 messages will not be logged.
+
+=item * C<prioritize>
+
+A value indicating whether to utilize the job 'priority' field when selecting
+jobs to be processed. If unspecified, jobs will always be executed in a
+randomized order.
 
 =item * C<driver_cache_expiration>
 
@@ -765,6 +923,10 @@ Adds a new job with funcname C<$funcname> and arguments C<$arg> to the queue.
 Adds the given C<TheSchwartz::Job> objects to one of the client's job
 databases. All the given jobs are recorded in I<one> job database.
 
+=head2 C<$client-E<gt>set_prioritize( $prioritize )>
+
+Set the C<prioritize> value as described in the constructor.
+
 =head1 WORKING
 
 The methods of TheSchwartz clients for use in worker processes are:
@@ -790,6 +952,10 @@ Find and perform any jobs C<$client> can do, forever. When no job is available,
 the working process will sleep for C<$delay> seconds (or 5, if not specified)
 before looking again.
 
+=head2 C<$client-E<gt>work_on($handle)>
+
+Given a job handle (a scalar string) I<$handle>, runs the job, then returns.
+
 =head2 C<$client-E<gt>find_job_for_workers( [$abilities] )>
 
 Returns a C<TheSchwartz::Job> for a random job that the client can do. If
@@ -809,6 +975,10 @@ C<$ability> and with a coalescing value beginning with C<$coval>.
 Note the C<TheSchwartz> implementation of this function uses a C<LIKE> query to
 find matching jobs, with all the attendant performance implications for your
 job databases.
+
+=head2 C<$client-E<gt>get_server_time( $driver )>
+
+Given an open driver I<$driver> to a database, gets the current server time from the database.
 
 =head1 COPYRIGHT, LICENSE & WARRANTY
 

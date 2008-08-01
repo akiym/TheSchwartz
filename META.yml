@@ -15,4 +15,4 @@ requires:
   Data::ObjectDriver: 0.04
   Digest::MD5: 0
   Storable: 0
-version: 1.04
+version: 1.07

@@ -1,4 +1,4 @@
-# $Id: FuncMap.pm 42 2006-05-16 05:15:30Z btrott $
+# $Id: FuncMap.pm 136 2008-02-23 01:28:13Z bchoate $
 
 package TheSchwartz::FuncMap;
 use strict;
@@ -16,9 +16,16 @@ sub create_or_find {
     my $class = shift;
     my($driver, $funcname) = @_;
 
+    ## Attempt to select funcmap record by name. If successful, return
+    ## object, otherwise proceed with insertion and return.
+    my ($map) = $driver->search('TheSchwartz::FuncMap' =>
+            { funcname => $funcname }
+        );
+    return $map if $map;
+
     ## Attempt to insert a new funcmap row. Since the funcname column is
     ## UNIQUE, if the row already exists, an exception will be thrown.
-    my $map = $class->new;
+    $map = $class->new;
     $map->funcname($funcname);
     eval { $driver->insert($map) };
 

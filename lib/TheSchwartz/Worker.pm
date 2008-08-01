@@ -1,4 +1,4 @@
-# $Id: Worker.pm 106 2006-10-16 21:42:32Z mpaschal $
+# $Id: Worker.pm 134 2007-08-22 22:04:38Z garth $
 
 package TheSchwartz::Worker;
 use strict;
@@ -24,6 +24,8 @@ sub work_safely {
 
     $job->debug("Working on $class ...");
     $job->set_as_current;
+    $client->start_scoreboard;
+
     eval {
         $res = $class->work($job);
     };
@@ -36,6 +38,8 @@ sub work_safely {
     unless ($cjob->did_something) {
         $cjob->failed('Job did not explicitly complete, fail, or get replaced');
     }
+
+    $client->end_scoreboard;
 
     # FIXME: this return value is kinda useless/undefined.  should we even return anything?  any callers? -brad
     return $res;

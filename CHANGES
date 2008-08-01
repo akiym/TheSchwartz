@@ -1,3 +1,20 @@
+1.07 (2008-07-31)
+    - bchoate: Updates to support optional prioritization of jobs.
+    - ykerherve: Croak with a nice message id a driver cannot be
+      found for a handle
+
+1.06 (2007-09-07)
+    - Code to allow a 'top' like view of runnin schwartz workers.
+    - include postgres schema in docs.  from Michael Zedeler
+      <michael@zedeler.dk>  Currently not tested in regression
+      tests, though, so not "officially" supported yet.
+    - start of work on gearman-based schwartz server.
+
+1.05
+
+    - Set TheSchwartz::Job::insert_time to current server time when
+      inserting a new job.
+
 1.04 (2007-05-22)
 
     - no code changes, just packaging/dep/test fixes, as pointed out
