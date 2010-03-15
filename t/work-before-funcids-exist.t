@@ -7,7 +7,7 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => 4;
+use Test::More tests => 6;
 
 run_tests(2, sub {
     my $client = test_client(dbs => ['ts1']);
@@ -21,9 +21,9 @@ run_tests(2, sub {
     $client->work_until_done;
 
     ok(! $handle->is_pending, "job is done");
+
+    teardown_dbs('ts1');
 });
-
-
 
 ############################################################################
 package Worker::Dummy;

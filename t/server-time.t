@@ -6,9 +6,9 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => 4;
+use Test::More tests => 6;
 
-run_tests(4, sub {
+run_tests(2, sub {
     my $client = test_client(dbs => ['ts1']);
 
     my $driver = $client->driver_for( ($client->shuffled_databases)[0] );

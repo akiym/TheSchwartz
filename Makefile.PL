@@ -7,10 +7,13 @@ name('TheSchwartz');
 version_from('lib/TheSchwartz.pm');
 author('Six Apart <cpan@sixapart.com>');
 license('perl');
+build_requires 'Test::More', 0.88;
 
 requires('Data::ObjectDriver' => '0.04');
 requires('Digest::MD5');
 requires('Storable');
+
+tests( -e "inc/.author" ? "t/*.t xt/*.t" : "t/*.t" );
 
 install_script('bin/schwartzmon');
 

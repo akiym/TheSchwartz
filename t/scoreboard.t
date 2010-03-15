@@ -5,10 +5,15 @@ use warnings;
 
 require 't/lib/db-common.pl';
 
-use Test::More tests => 20;
+use Test::More tests => 30;
 
 use TheSchwartz;
 use File::Spec qw();
+use File::Temp qw(tempdir);
+# create a tmp directory with a unique name.  This stops
+# us conflicting with any other runs of this process and means
+# we tidy up after ourselves
+my $tempdir = tempdir( CLEANUP => 1 );
 
 run_tests(10, sub {
     my $pfx = '';
@@ -16,12 +21,12 @@ run_tests(10, sub {
 
     setup_dbs({prefix => $pfx}, $dbs);
 
-    my $client = TheSchwartz->new(scoreboard => '/tmp',
+    my $client = TheSchwartz->new(scoreboard => $tempdir,
                                   databases => [
                                           map { {
                                               dsn  => dsn_for($_),
-                                              user => "root",
-                                              pass => "",
+                                              user => $ENV{TS_DB_USER},
+                                              pass => $ENV{TS_DB_PASS},
                                               prefix => $pfx,
                                           } } @$dbs
                                           ]);
@@ -38,7 +43,8 @@ run_tests(10, sub {
         my $job    = Worker::Addition->grab_job($client);
 
         my $rv = eval { Worker::Addition->work_safely($job); };
-        ok(length($@) == 0, 'Finished job with out error');
+        ok(length($@) == 0, 'Finished job with out error')
+            or diag($@);
 
         unless (ok(-e $sb_file, "Scoreboard file exists")) {
             return;

@@ -1,4 +1,4 @@
-# $Id: Error.pm 101 2006-08-23 21:22:49Z bradfitz $
+# $Id$
 
 package TheSchwartz::Error;
 use strict;
