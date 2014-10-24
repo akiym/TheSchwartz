@@ -1,0 +1,12 @@
+Build
+blib
+_build
+.*.sw?
+cover_db/
+TheSchwarts*.tar.gz
+MYMETA.yml
+MYMETA.json
+META.json
+META.yml
+*.bak
+Notes.md

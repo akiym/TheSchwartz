@@ -8,17 +8,17 @@ use Storable ();
 
 sub grab_job {
     my $class = shift;
-    my($client) = @_;
-    return $client->find_job_for_workers([ $class ]);
+    my ($client) = @_;
+    return $client->find_job_for_workers( [$class] );
 }
 
-sub keep_exit_status_for { 0 }
-sub max_retries { 0 }
-sub retry_delay { 0 }
-sub grab_for { 60 * 60 }   ## 1 hour
+sub keep_exit_status_for {0}
+sub max_retries          {0}
+sub retry_delay          {0}
+sub grab_for             { 60 * 60 }    ## 1 hour
 
 sub work_safely {
-    my ($class, $job) = @_;
+    my ( $class, $job ) = @_;
     my $client = $job->handle->client;
     my $res;
 
@@ -26,9 +26,7 @@ sub work_safely {
     $job->set_as_current;
     $client->start_scoreboard;
 
-    eval {
-        $res = $class->work($job);
-    };
+    eval { $res = $class->work($job); };
     my $errstr = $@;
 
     my $cjob = $client->current_job;
@@ -36,13 +34,14 @@ sub work_safely {
         $job->debug("Eval failure: $errstr");
         $cjob->failed($@);
     }
-    if (! $cjob->was_declined && ! $cjob->did_something) {
-        $cjob->failed('Job did not explicitly complete, fail, or get replaced');
+    if ( !$cjob->was_declined && !$cjob->did_something ) {
+        $cjob->failed(
+            'Job did not explicitly complete, fail, or get replaced');
     }
 
     $client->end_scoreboard;
 
-    # FIXME: this return value is kinda useless/undefined.  should we even return anything?  any callers? -brad
+# FIXME: this return value is kinda useless/undefined.  should we even return anything?  any callers? -brad
     return $res;
 }
 

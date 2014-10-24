@@ -11,6 +11,8 @@ svn-commit.tmp
 \bCVS\b
 ,v$
 \B\.svn\b
+\B\.git\b
+\B\.gitignore\b
 
 # Avoid Makemaker generated and utility files.
 \bMANIFEST\.bak
@@ -22,6 +24,7 @@ svn-commit.tmp
 # Avoid Module::Build generated and utility files.
 \bBuild$
 \b_build/
+^Notes.md$
 
 # Avoid temp and backup files.
 ~$
@@ -29,3 +32,23 @@ svn-commit.tmp
 \#$
 \b\.#
 \.git/
+\cover_db/
+^MYMETA.*$
+
+# Avoid Devel::Cover and Devel::CoverX::Covered files.
+\bcover_db\b
+\bcovered\b
+
+# Avoid temp and backup files.
+~$
+\.old$
+\#$
+\b\.#
+\.bak$
+\.tmp$
+\.#
+\.rej$
+\.swp$
+\.swo$
+
+

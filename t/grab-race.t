@@ -24,44 +24,52 @@ $SIG{USR1} = sub {
 }
 
 # kill children on exit
-my %children;  # pid -> 1
+my %children;    # pid -> 1
+
 END {
     my @pids = keys %children;
     kill -9, @pids if @pids;
 }
 
-run_tests_innodb(2, sub {
+run_tests_innodb(
+    2,
+    sub {
 
-    # get one job into database, to see if children do it twice:
-    {
-        my $client = test_client(dbs => ['ts1']);
-        my $handle = $client->insert("Worker::Addition", { numbers => [1, 2] });
-        isa_ok $handle, 'TheSchwartz::JobHandle', "inserted job";
+        # get one job into database, to see if children do it twice:
+        {
+            my $client = test_client( dbs => ['ts1'] );
+            my $handle = $client->insert( "Worker::Addition",
+                { numbers => [ 1, 2 ] } );
+            isa_ok $handle, 'TheSchwartz::JobHandle', "inserted job";
+        }
+
+        # two children to race to get the above job.
+        work();
+        work();
+
+        # hang out for 3 seconds waiting for children to init/race/finish
+        my $now = time();
+        while ( time() < $now + 3 ) {
+            sleep 1;
+        }
+
+        is( $work_count, 1, "only got one signal from worker children" );
+        teardown_dbs('ts1');
     }
-
-    # two children to race to get the above job.
-    work();
-    work();
-
-    # hang out for 3 seconds waiting for children to init/race/finish
-    my $now = time();
-    while (time() < $now + 3) {
-        sleep 1;
-    }
-
-    is($work_count, 1, "only got one signal from worker children");
-    teardown_dbs('ts1');
-});
+);
 
 sub work {
+
     # parent:
-    if (my $childpid = fork()) {
+    if ( my $childpid = fork() ) {
         $children{$childpid} = 1;
         return;
     }
 
-    my $client = test_client(dbs => ['ts1'],
-                             init => 0);
+    my $client = test_client(
+        dbs  => ['ts1'],
+        init => 0
+    );
 
     # child:
     my $job = Worker::Addition->grab_job($client);
@@ -76,7 +84,7 @@ package Worker::Addition;
 use base 'TheSchwartz::Worker';
 
 sub work {
-    my ($class, $job) = @_;
+    my ( $class, $job ) = @_;
     kill 'USR1', getppid();
     $job->completed;
 }
@@ -84,5 +92,5 @@ sub work {
 # tell framework to set 'grabbed_until' to time() + 60.  because if
 # we can't  add some numbers in 30 seconds, our process probably
 # failed and work should be reassigned.
-sub grab_for { 30 }
+sub grab_for {30}
 

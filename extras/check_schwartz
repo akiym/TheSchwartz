@@ -13,11 +13,11 @@ use constant QUEUE_CRITICAL => 100;
 use constant QUEUE_WARNING  => 30;
 
 GetOptions(
-    'h|help!'     => \my($help),
-    'v|verbose'   => \my($verbose),
-    'dsn=s'       => \my($dsn),
-    'user=s'      => \my($user),
-    'password=s'  => \my($pass),
+    'h|help!'    => \my ($help),
+    'v|verbose'  => \my ($verbose),
+    'dsn=s'      => \my ($dsn),
+    'user=s'     => \my ($user),
+    'password=s' => \my ($pass),
 );
 
 if ($help) {
@@ -25,7 +25,7 @@ if ($help) {
     exit $ERRORS{OK};
 }
 
-unless ($dsn && $user) {
+unless ( $dsn && $user ) {
     print <<USAGE;
 You have to supply a database DSN and username.
 
@@ -37,28 +37,30 @@ USAGE
 }
 
 sub exit_with {
-    my($code, $msg) = @_;
+    my ( $code, $msg ) = @_;
     $msg = $msg ? ' - ' . $msg : '';
     print "TheSchwartz $dsn $code$msg";
     exit $ERRORS{$code};
 }
 
-my $dbh = DBI->connect($dsn, $user, $pass)
+my $dbh = DBI->connect( $dsn, $user, $pass )
     or exit_with 'CRITICAL', "Can't connect to $dsn: $DBI::errstr";
 
-my $inf = $dbh->selectrow_arrayref(<<SQL, undef, time);
+my $inf = $dbh->selectrow_arrayref( <<SQL, undef, time );
 SELECT COUNT(*)
 FROM job
 WHERE run_after <= ?
 SQL
-unless ($inf && defined $inf->[0]) {
+unless ( $inf && defined $inf->[0] ) {
     exit_with 'CRITICAL', "Failed getting job count: " . $dbh->errstr;
 }
 
-if ($inf->[0] < QUEUE_WARNING) {
+if ( $inf->[0] < QUEUE_WARNING ) {
     exit_with 'OK';
-} elsif ($inf->[0] < QUEUE_CRITICAL) {
+}
+elsif ( $inf->[0] < QUEUE_CRITICAL ) {
     exit_with 'WARNING', "Schwartz queue depth is $inf->[0]";
-} else {
+}
+else {
     exit_with 'CRITICAL', "Schwartz queue depth is $inf->[0]";
 }
