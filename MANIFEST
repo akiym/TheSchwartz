@@ -19,6 +19,7 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 META.yml
 perltidyrc
+README.md
 server/bin/schwartzd
 server/doc/deps.txt
 server/doc/protocol.txt
