@@ -14,14 +14,14 @@ INSTALLATION
 
 Just follow the usual procedure:
 
-   perl Build.PL
-   ./Build
-   ./Build test
-   ./Build install
+    perl Build.PL
+    ./Build
+    ./Build test
+    ./Build install
 
 If you want to install a private copy of this module-suite in your home directory, then you should try to produce the initial Makefile with something like this command:
 
-  perl Build.PL PREFIX=~/perl
+    perl Build.PL PREFIX=~/perl
 
 See perldoc perlmodinstall for more information on installing modules.
 
@@ -30,8 +30,8 @@ SUPPORT
 
 Just follow the usual procedure:
 
-   perl Build.PL
-   ./Build
+    perl Build.PL
+    ./Build
 
 Questions, bug reports, useful code bits, and suggestions for this module should just be sent to JFEARN@cpan.org or open a ticket in the [CPAN RT](https://rt.cpan.org//Dist/Display.html?Queue=TheSchwartz)
 
