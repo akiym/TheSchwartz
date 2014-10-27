@@ -39,5 +39,5 @@ AVAILABILITY
 -------
 The latest version of this module is available from the Comprehensive Perl Archive Network (CPAN).  Visit (http://www.perl.com/CPAN/) to find a CPAN site near you.
 
-The source is available on github (https://github.com/jfearn/TheSchwart), patches should be sent as pull requests against this repository.
+The source is available on github (https://github.com/jfearn/TheSchwartz), patches should be sent as pull requests against this repository.
 
