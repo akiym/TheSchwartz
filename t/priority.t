@@ -6,12 +6,13 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => 31 * 3;
+use Test::More tests => ( ( 31 * 3 ) + ( 16 * 3 ) );
 
 our $record_expected;
+our $test2 = 0;
 
 run_tests(
-    31,
+    47,
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
@@ -45,6 +46,44 @@ run_tests(
         ok( !$rv, "nothing to do now" );
 
         teardown_dbs('ts1');
+
+        # test we get in jobid order for equal priority RT #99075
+        $test2 = 1;
+        my $client2 = test_client( dbs => ['ts2'] );
+        $client2->set_prioritize(1);
+        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
+
+        $client2->reset_abilities;
+        $client2->can_do("Worker::PriorityTest");
+
+        Worker::PriorityTest->set_client($client2);
+
+        # Define that we want to use priority selection
+        # limit batch size to 1 so we always process jobs in
+        # priority order
+        $client2->set_prioritize(1);
+        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
+
+        for ( 1 .. 5 ) {
+            my $job = TheSchwartz::Job->new(
+                funcname => 'Worker::PriorityTest',
+                arg      => { num => $_ },
+                priority => 5,
+            );
+            my $h = $client2->insert($job);
+            ok( $h, "inserted job (priority $_)" );
+        }
+
+        for ( 1 .. 5 ) {
+            $record_expected = $_;
+            my $rv = eval { $client2->work_once; };
+            ok( $rv, "did stuff 1-5" );
+        }
+        $rv = eval { $client2->work_once; };
+        ok( !$rv, "nothing to do now 1-5" );
+
+        teardown_dbs('ts2');
+        $test2 = 0;
     }
 );
 
@@ -61,15 +100,23 @@ sub work {
     my ( $class, $job ) = @_;
     my $priority = $job->priority;
 
-    ok( ( !defined($main::record_expected) && ( !defined($priority) ) )
-            || ( $priority == $main::record_expected ),
-        "priority matches expected priority"
-    );
+    if ($main::test2) {
+        ok( $job->jobid == $main::record_expected,
+            "order by ID for same priority"
+        );
+    }
+    else {
+        ok( ( !defined($main::record_expected) && ( !defined($priority) ) )
+                || ( $priority == $main::record_expected ),
+            "priority matches expected priority"
+        );
+    }
+
     $job->completed;
 }
 
 sub keep_exit_status_for {
-    20
+    20;
 }    # keep exit status for 20 seconds after on_complete
 
 sub grab_for {10}

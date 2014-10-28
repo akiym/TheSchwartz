@@ -160,11 +160,10 @@ sub lookup_job {
 sub list_jobs {
     my TheSchwartz $client = shift;
     my $arg = shift;
-    my @options;
-    push @options, run_after => { op => '<=', value => $arg->{run_after} }
+    my ( %terms, %options );
+    $terms{run_after} = { op => '<=', value => $arg->{run_after} }
         if exists $arg->{run_after};
-    push @options,
-        grabbed_until => { op => '<=', value => $arg->{grabbed_until} }
+    $terms{grabbed_until} = { op => '<=', value => $arg->{grabbed_until} }
         if exists $arg->{grabbed_until};
     die "No funcname" unless exists $arg->{funcname};
 
@@ -173,8 +172,14 @@ sub list_jobs {
 
     if ( $arg->{coalesce} ) {
         $arg->{coalesce_op} ||= '=';
-        push @options, coalesce =>
-            { op => $arg->{coalesce_op}, value => $arg->{coalesce} };
+    }
+
+    $options{limit} = $limit;
+    if ( $client->prioritize ) {
+        $options{sort} = [
+            { column => 'priority', direction => 'descend' },
+            { column => 'jobid' },
+        ];
     }
 
     my @jobs;
@@ -182,14 +187,13 @@ sub list_jobs {
         ## If the database is dead, skip it
         next if $client->is_database_dead($hashdsn);
         my $driver = $client->driver_for($hashdsn);
-        my $funcid;
         if ( ref( $arg->{funcname} ) ) {
-            $funcid
+            $terms{funcid}
                 = [ map { $client->funcname_to_id( $driver, $hashdsn, $_ ) }
                     @{ $arg->{funcname} } ];
         }
         else {
-            $funcid = $client->funcname_to_id( $driver, $hashdsn,
+            $terms{funcid} = $client->funcname_to_id( $driver, $hashdsn,
                 $arg->{funcname} );
         }
 
@@ -203,37 +207,11 @@ sub list_jobs {
                 );
                 $_->handle($handle);
                 $_;
-                } $driver->search(
-                'TheSchwartz::Job' => {
-                    funcid => $funcid,
-                    @options
-                },
-                {   limit => $limit,
-                    (   $client->prioritize
-                        ? ( sort      => 'priority',
-                            direction => 'descend'
-                            )
-                        : ()
-                    )
-                }
-                );
+            } $driver->search( 'TheSchwartz::Job' => \%terms, \%options );
         }
         else {
             push @jobs,
-                $driver->search(
-                'TheSchwartz::Job' => {
-                    funcid => $funcid,
-                    @options
-                },
-                {   limit => $limit,
-                    (   $client->prioritize
-                        ? ( sort      => 'priority',
-                            direction => 'descend'
-                            )
-                        : ()
-                    )
-                }
-                );
+                $driver->search( 'TheSchwartz::Job' => \%terms, \%options );
         }
     }
     return @jobs;
@@ -262,6 +240,14 @@ sub _find_job_with_coalescing {
         my $driver   = $client->driver_for($hashdsn);
         my $unixtime = $driver->dbd->sql_for_unixtime;
 
+        my %options = ( limit => $FIND_JOB_BATCH_SIZE );
+        if ( $client->prioritize ) {
+            $options{sort} = [
+                { column => 'priority', direction => 'descend' },
+                { column => 'jobid' },
+            ];
+        }
+
         my @jobs;
         eval {
             ## Search for jobs in this database where:
@@ -279,14 +265,7 @@ sub _find_job_with_coalescing {
                     grabbed_until => \"<= $unixtime",
                     coalesce      => { op => $op, value => $coval },
                 },
-                {   limit => $FIND_JOB_BATCH_SIZE,
-                    (   $client->prioritize
-                        ? ( sort      => 'priority',
-                            direction => 'descend'
-                            )
-                        : ()
-                    )
-                }
+                \%options,
             );
         };
         if ($@) {
@@ -304,6 +283,14 @@ sub find_job_for_workers {
     my TheSchwartz $client = shift;
     my ($worker_classes) = @_;
     $worker_classes ||= $client->{current_abilities};
+
+    my %options = ( limit => $FIND_JOB_BATCH_SIZE );
+    if ( $client->prioritize ) {
+        $options{sort} = [
+            { column => 'priority', direction => 'descend' },
+            { column => 'jobid' },
+        ];
+    }
 
     for my $hashdsn ( $client->shuffled_databases ) {
         ## If the database is dead, skip it.
@@ -328,14 +315,7 @@ sub find_job_for_workers {
                     run_after     => \"<= $unixtime",
                     grabbed_until => \"<= $unixtime",
                 },
-                {   limit => $FIND_JOB_BATCH_SIZE,
-                    (   $client->prioritize
-                        ? ( sort      => 'priority',
-                            direction => 'descend'
-                            )
-                        : ()
-                    )
-                }
+                \%options,
             );
         };
         if ($@) {
@@ -737,7 +717,7 @@ sub start_scoreboard {
 
     my $class = $job->funcname;
 
-    open(my $SB, '>', $scoreboard )
+    open( my $SB, '>', $scoreboard )
         or $job->debug("Could not write scoreboard '$scoreboard': $!");
     print $SB join(
         "\n",
