@@ -77,10 +77,10 @@ TheSchwartz::Worker - superclass for defining task behavior
 =head1 DESCRIPTION
 
 I<TheSchwartz::Worker> objects are the salt of the reliable job queuing earth.
-The behavior required to perform posted jobs are defined in subclasses of
-I<TheSchwartz::Worker>. These subclasses are named for the ability required of
+The behavior required to perform posted jobs are defined in sub-classes of
+I<TheSchwartz::Worker>. These sub-classes are named for the ability required of
 a C<TheSchwartz> client to do the job, so that the clients can dispatch
-automatically to the approprate worker routine.
+automatically to the appropriate worker routine.
 
 Because jobs can be performed by any machine running code for capable worker
 classes, C<TheSchwartz::Worker>s are generally stateless. All mutable state is

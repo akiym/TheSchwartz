@@ -408,13 +408,13 @@ The C<insert_time> field is not used.
 =head2 C<run_after>
 
 The UNIX system time after which the job can next be attempted by a worker
-process. This timestamp is set when a job is first created or is released after
+process. This time stamp is set when a job is first created or is released after
 a failure.
 
 =head2 C<grabbed_until>
 
 The UNIX system time after which the job can next be available by a worker
-process. This timestamp is set when a job is grabbed by a worker process, and
+process. This time stamp is set when a job is grabbed by a worker process, and
 reset to C<0> when is released due to failure to complete the job.
 
 =head2 C<priority>
@@ -425,7 +425,7 @@ details.
 
 =head2 C<coalesce>
 
-A string used to discover jobs that can be efficiently pipelined with a given
+A string used to discover jobs that can be efficiently pipe-lined with a given
 job due to some shared resource. For example, for email delivery jobs, the
 domain of an email address could be used as the C<coalesce> value. A worker
 process could then deliver all the mail queued for a given mail host after
@@ -549,7 +549,7 @@ against the max_retries count.
 
 Atomically replaces the single job C<$job> with the given set of jobs.
 
-This can be used to decompose one "metajob" posted by your application into a
+This can be used to decompose one "meta job" posted by your application into a
 set of jobs workers can perform, or to post a job or jobs required to complete
 the process already partly performed.
 

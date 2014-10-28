@@ -880,7 +880,7 @@ the system, and your worker processes can pull jobs from the queue atomically
 to perform. Failed jobs can be left in the queue to retry later.
 
 I<Abilities> specify what jobs a worker process can perform. Abilities are the
-names of C<TheSchwartz::Worker> subclasses, as in the synopsis: the C<MyWorker>
+names of C<TheSchwartz::Worker> sub-classes, as in the synopsis: the C<MyWorker>
 class name is used to specify that the worker script can perform the job. When
 using the C<TheSchwartz> client's C<work> functions, the class-ability duality
 is used to automatically dispatch to the proper class to do the actual work.
@@ -921,7 +921,7 @@ The database DSN for this database.
 
 =item * C<user>
 
-The username to use when connecting to this database.
+The user name to use when connecting to this database.
 
 =item * C<pass>
 
@@ -1007,7 +1007,7 @@ this option might be removed, as you should always have this on a Job object.
 
 =back
 
-It is important to remember that this function doesnt lock anything, it just
+It is important to remember that this function does not lock anything, it just
 returns as many jobs as there is up to amount of databases * FIND_JOB_BATCH_SIZE
 
 =head2 C<$client-E<gt>lookup_job( $handle_id )>
@@ -1031,7 +1031,7 @@ Adds the given C<TheSchwartz::Job> to one of the client's job databases.
 
 =head2 C<$client-E<gt>insert( $funcname, $arg )>
 
-Adds a new job with funcname C<$funcname> and arguments C<$arg> to the queue.
+Adds a new job with function name C<$funcname> and arguments C<$arg> to the queue.
 
 =head2 C<$client-E<gt>insert_jobs( @jobs )>
 
@@ -1077,7 +1077,7 @@ Similar to L<$client-E<gt>work_on($handle)>, except that the job will be grabbed
 before being run. It guarantees that only one worker will work on it (at least
 in the C<grab_for> interval).
 
-Returns false if the worker couldn't grab the job, and true if the worker worked
+Returns false if the worker could not grab the job, and true if the worker worked
 on it.
 
 =head2 C<$client-E<gt>find_job_for_workers( [$abilities] )>
@@ -1106,9 +1106,9 @@ Given an open driver I<$driver> to a database, gets the current server time from
 
 =head1 THE SCOREBOARD
 
-The scoreboards can be used to monitor what the TheSchwartz::Worker subclasses are
+The scoreboards can be used to monitor what the TheSchwartz::Worker sub-classes are
 currently working on.  Once the scoreboard has been enabled in the workers with
-C<set_scoreboard> method the C<thetop> utility (shipped with TheSchwartz distribuition
+C<set_scoreboard> method the C<thetop> utility (shipped with TheSchwartz distribution
 in the C<extras> directory) can be used to list all current jobs being worked on.
 
 =head2 C<< $client->set_scoreboard( $dir ) >>
@@ -1165,7 +1165,7 @@ rights reserved.
 TheSchwartz is free software; you may redistribute it and/or modify it
 under the same terms as Perl itself.
 
-TheScwhartz comes with no warranty of any kind.
+TheSchwartz comes with no warranty of any kind.
 
 =cut
 

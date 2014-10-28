@@ -3,6 +3,7 @@
     - Remove inc & autobuild
     - Add perltidyrc and run over all perl files.
     - Add perlcritic test & fix errors
+    - Add Test::Spelling and fix all spelling errors in POD. RT #89165
 
 1.10 (2010-03-15)
     - Add $job->declined method for workers to be able to decline handling
