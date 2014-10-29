@@ -66,7 +66,7 @@ sub test_client {
         setup_dbs( { prefix => $pfx }, $dbs );
     }
 
-    if ( $ENV{USE_DBH_FOR_TEST} ) {
+    if ( $ENV{USE_DBH_FOR_TEST} || $ENV{USE_GET_DBH_FOR_TEST} ) {
         my @tmp;
         for (@$dbs) {
             eval {
@@ -79,7 +79,10 @@ sub test_client {
                     }
                 ) or die $DBI::errstr;
                 my $driver
-                    = Data::ObjectDriver::Driver::DBI->new( dbh => $dbh );
+                    = Data::ObjectDriver::Driver::DBI->new(
+                    $ENV{USE_GET_DBH_FOR_TEST}
+                    ? ( get_dbh => sub {$dbh} )
+                    : ( dbh => $dbh ) );
                 push @tmp, { driver => $driver, prefix => $pfx };
             };
         }

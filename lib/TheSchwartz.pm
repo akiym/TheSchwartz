@@ -67,8 +67,15 @@ sub hash_databases {
         my $var;
         my @parts;
         if ( $ref->{driver} ) {
-            my $dbh  = tied( %{ $ref->{driver}->dbh } );
-            my $dsn  = "dbd:" . $dbh->{Driver}->{Name} . ":" . $dbh->{Name};
+            my $dbh;
+            if ( my $getter = $ref->{driver}->get_dbh ) {
+                $dbh = $getter->();
+            }
+            else {
+                $dbh = $ref->{driver}->dbh;
+            }
+            $dbh = tied( %{$dbh} );
+            my $dsn = "dbd:" . $dbh->{Driver}->{Name} . ":" . $dbh->{Name};
             my $user = $dbh->{Username} || '';
             @parts = ( $dsn, $user );
         }
