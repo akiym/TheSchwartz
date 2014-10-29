@@ -53,4 +53,5 @@ t/unique.t
 t/work-before-funcids-exist.t
 xt/perlcritic.t
 xt/pod-coverage.t
+xt/pod-spelling.t
 xt/pod.t

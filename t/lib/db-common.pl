@@ -94,7 +94,7 @@ sub test_client {
                         pass   => $ENV{TS_DB_PASS},
                         prefix => $pfx,
                     }
-                    } @$dbs
+                } @$dbs
             ]
         );
     }
@@ -178,7 +178,7 @@ sub setup_dbs {
 
 sub mysql_dbh {
     return DBI->connect( "DBI:mysql:mysql", "root", "", { RaiseError => 1 } )
-        or die "Couldn't connect to database";
+        || die "Couldn't connect to database";
 }
 
 my $pg_dbh;
