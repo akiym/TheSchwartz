@@ -6,11 +6,13 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => ( ( 31 * 3 ) + ( 16 * 3 ) + ( 12 * 3) );
+use Test::More tests => ( ( 31 * 3 ) + ( 16 * 3 ) + ( 12 * 3 ) );
 
 our $record_expected;
 our $testnum = 0;
-our $floor = 3;
+our $floor   = 3;
+
+$TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
 
 run_tests(
     59,
@@ -21,7 +23,6 @@ run_tests(
         # limit batch size to 1 so we always process jobs in
         # priority order
         $client->set_prioritize(1);
-        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
 
         for ( 1 .. 10 ) {
             my $job = TheSchwartz::Job->new(
@@ -51,8 +52,6 @@ run_tests(
         # test we get in jobid order for equal priority RT #99075
         $testnum = 1;
         my $client2 = test_client( dbs => ['ts2'] );
-        $client2->set_prioritize(1);
-        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
 
         $client2->reset_abilities;
         $client2->can_do("Worker::PriorityTest");
@@ -63,7 +62,6 @@ run_tests(
         # limit batch size to 1 so we always process jobs in
         # priority order
         $client2->set_prioritize(1);
-        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
 
         for ( 1 .. 5 ) {
             my $job = TheSchwartz::Job->new(
@@ -90,14 +88,11 @@ run_tests(
 
         $client2 = test_client( dbs => ['ts3'] );
         $client2->set_prioritize(1);
-        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
-
         $client2->reset_abilities;
         $client2->can_do("Worker::PriorityTest");
 
         Worker::PriorityTest->set_client($client2);
-        $client2->set_prioritize(1);
-        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
+
         $client2->set_floor($floor);
 
         for ( 1 .. 5 ) {
@@ -136,15 +131,13 @@ sub work {
     my ( $class, $job ) = @_;
     my $priority = $job->priority;
 
-    if ($main::testnum == 1) {
+    if ( $main::testnum == 1 ) {
         ok( $job->jobid == $main::record_expected,
             "order by ID for same priority"
         );
     }
-    elsif ($main::testnum == 2) {
-        ok( $job->priority >= $floor,
-            "check floor"
-        );
+    elsif ( $main::testnum == 2 ) {
+        ok( $job->priority >= $floor, "check floor" );
     }
     else {
         ok( ( !defined($main::record_expected) && ( !defined($priority) ) )

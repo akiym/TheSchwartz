@@ -4,7 +4,7 @@ package TheSchwartz;
 use 5.008;
 use strict;
 use fields
-    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor );
+    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor batch_size );
 
 our $VERSION = "1.10";
 
@@ -43,6 +43,7 @@ sub new {
     $client->set_scoreboard( delete $args{scoreboard} );
     $client->{driver_cache_expiration} = delete $args{driver_cache_expiration}
         || 0;
+    $client->{batch_size} = delete $args{batch_size} || $FIND_JOB_BATCH_SIZE;
 
     my $floor = delete $args{floor};
     $client->set_floor($floor) if ($floor);
@@ -180,7 +181,7 @@ sub list_jobs {
     die "No funcname" unless exists $arg->{funcname};
 
     $arg->{want_handle} = 1 unless defined $arg->{want_handle};
-    my $limit = $arg->{limit} || $FIND_JOB_BATCH_SIZE;
+    my $limit = $arg->{limit} || $client->batch_size;
 
     if ( $arg->{coalesce} ) {
         $arg->{coalesce_op} ||= '=';
@@ -258,7 +259,7 @@ sub _find_job_with_coalescing {
         my $driver   = $client->driver_for($hashdsn);
         my $unixtime = $driver->dbd->sql_for_unixtime;
 
-        my %options = ( limit => $FIND_JOB_BATCH_SIZE );
+        my %options = ( limit => $client->batch_size );
         if ( $client->prioritize ) {
             $options{sort} = [
                 { column => 'priority', direction => 'descend' },
@@ -311,7 +312,7 @@ sub find_job_for_workers {
     my ($worker_classes) = @_;
     $worker_classes ||= $client->{current_abilities};
 
-    my %options = ( limit => $FIND_JOB_BATCH_SIZE );
+    my %options = ( limit => $client->batch_size );
     if ( $client->prioritize ) {
         $options{sort} = [
             { column => 'priority', direction => 'descend' },
@@ -844,6 +845,16 @@ sub set_floor {
     $client->{floor} = shift;
 }
 
+sub batch_size {
+    my TheSchwartz $client = shift;
+    return $client->{batch_size};
+}
+
+sub set_batch_size {
+    my TheSchwartz $client = shift;
+    $client->{batch_size} = shift;
+}
+
 # current job being worked.  so if something dies, work_safely knows which to mark as dead.
 sub current_job {
     my TheSchwartz $client = shift;
@@ -992,6 +1003,10 @@ randomized order.
 A value indicating the minimum priority a job needs to be for this worker to 
 perform. If unspecified all jobs are considered.
 
+=item * C<batch_size>
+
+A value indicating how many jobs should be fetched from the DB for consideration.
+
 =item * C<driver_cache_expiration>
 
 Optional value to control how long database connections are cached for in seconds.
@@ -1046,7 +1061,7 @@ this option might be removed, as you should always have this on a Job object.
 =back
 
 It is important to remember that this function does not lock anything, it just
-returns as many jobs as there is up to amount of databases * FIND_JOB_BATCH_SIZE
+returns as many jobs as there is up to amount of databases * $client->{batch_size}
 
 =head2 C<$client-E<gt>lookup_job( $handle_id )>
 
@@ -1082,7 +1097,11 @@ Set the C<prioritize> value as described in the constructor.
 
 =head2 C<$client-E<gt>set_floor( $floor )>
 
-Set the C<fllor<gt> value as described in the constructor.
+Set the C<floor<gt> value as described in the constructor.
+
+=head2 C<$client-E<gt>set_batch_size( $batch_size )>
+
+Set the C<batch_size<gt> value as described in the constructor.
 
 =head1 WORKING
 
