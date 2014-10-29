@@ -8,6 +8,7 @@
     - Fix wrong return precedence. RT #87222
     - Fix get_server_time for Oracle. # RT #58049
     - Support Data::ObjectDriver->get_dbh. RT #50022
+    - Use sort by jobid on selects. RT #34843
 
 1.10 (2010-03-15)
     - Add $job->declined method for workers to be able to decline handling

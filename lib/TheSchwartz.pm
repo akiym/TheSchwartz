@@ -189,6 +189,9 @@ sub list_jobs {
             { column => 'jobid' },
         ];
     }
+    else {    # RT #34843
+        $options{sort} = [ { column => 'jobid' }, ];
+    }
 
     my @jobs;
     for my $hashdsn ( $client->shuffled_databases ) {
@@ -255,6 +258,9 @@ sub _find_job_with_coalescing {
                 { column => 'jobid' },
             ];
         }
+        else {    # RT #34843
+            $options{sort} = [ { column => 'jobid' }, ];
+        }
 
         my @jobs;
         eval {
@@ -298,6 +304,9 @@ sub find_job_for_workers {
             { column => 'priority', direction => 'descend' },
             { column => 'jobid' },
         ];
+    }
+    else {    # RT #34843
+        $options{sort} = [ { column => 'jobid' }, ];
     }
 
     for my $hashdsn ( $client->shuffled_databases ) {
