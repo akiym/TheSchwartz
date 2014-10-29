@@ -1,6 +1,7 @@
 # $Id$
 
 package TheSchwartz;
+use 5.008;
 use strict;
 use fields
     qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize );
@@ -337,6 +338,11 @@ sub get_server_time {
     my TheSchwartz $client = shift;
     my ($driver)           = @_;
     my $unixtime_sql       = $driver->dbd->sql_for_unixtime;
+
+    # RT #58049
+    $unixtime_sql .= ' FROM DUAL'
+        if ( $driver->dbd->isa('Data::ObjectDriver::Driver::DBD::Oracle') );
+
     return $driver->rw_handle->selectrow_array("SELECT $unixtime_sql");
 }
 

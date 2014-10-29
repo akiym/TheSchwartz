@@ -3,7 +3,7 @@ blib
 _build
 .*.sw?
 cover_db/
-TheSchwarts*.tar.gz
+TheSchwartz*.tar.gz
 MYMETA.yml
 MYMETA.json
 META.json
