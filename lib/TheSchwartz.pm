@@ -4,7 +4,7 @@ package TheSchwartz;
 use 5.008;
 use strict;
 use fields
-    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize );
+    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor );
 
 our $VERSION = "1.10";
 
@@ -43,6 +43,10 @@ sub new {
     $client->set_scoreboard( delete $args{scoreboard} );
     $client->{driver_cache_expiration} = delete $args{driver_cache_expiration}
         || 0;
+
+    my $floor = delete $args{floor};
+    $client->set_floor($floor) if ($floor);
+
     croak "unknown options ", join( ', ', keys %args ) if keys %args;
 
     $client->hash_databases($databases);
@@ -193,6 +197,9 @@ sub list_jobs {
         $options{sort} = [ { column => 'jobid' }, ];
     }
 
+    if ( $client->floor ) {
+        $terms{priority} = { op => '>=', value => $client->floor };
+    }
     my @jobs;
     for my $hashdsn ( $client->shuffled_databases ) {
         ## If the database is dead, skip it
@@ -272,13 +279,19 @@ sub _find_job_with_coalescing {
             my $funcid
                 = $client->funcname_to_id( $driver, $hashdsn, $funcname );
 
+            my %terms = (
+                funcid        => $funcid,
+                run_after     => \"<= $unixtime",
+                grabbed_until => \"<= $unixtime",
+                coalesce      => { op => $op, value => $coval },
+            );
+
+            if ( $client->floor ) {
+                $terms{priority} = { op => '>=', value => $client->floor };
+            }
+
             @jobs = $driver->search(
-                'TheSchwartz::Job' => {
-                    funcid        => $funcid,
-                    run_after     => \"<= $unixtime",
-                    grabbed_until => \"<= $unixtime",
-                    coalesce      => { op => $op, value => $coval },
-                },
+                'TheSchwartz::Job' => \%terms,
                 \%options,
             );
         };
@@ -326,12 +339,18 @@ sub find_job_for_workers {
             my @ids = map { $client->funcname_to_id( $driver, $hashdsn, $_ ) }
                 @$worker_classes;
 
+            my %terms = (
+                funcid        => \@ids,
+                run_after     => \"<= $unixtime",
+                grabbed_until => \"<= $unixtime",
+            );
+
+            if ( $client->floor ) {
+                $terms{priority} = { op => '>=', value => $client->floor };
+            }
+
             @jobs = $driver->search(
-                'TheSchwartz::Job' => {
-                    funcid        => \@ids,
-                    run_after     => \"<= $unixtime",
-                    grabbed_until => \"<= $unixtime",
-                },
+                'TheSchwartz::Job' => \%terms,
                 \%options,
             );
         };
@@ -813,6 +832,18 @@ sub set_prioritize {
     $client->{prioritize} = shift;
 }
 
+sub floor {
+    my TheSchwartz $client = shift;
+    return $client->{floor};
+}
+
+sub set_floor {
+    my TheSchwartz $client = shift;
+    die "set_floor only works if prioritize is set."
+        unless ( $client->prioritize );
+    $client->{floor} = shift;
+}
+
 # current job being worked.  so if something dies, work_safely knows which to mark as dead.
 sub current_job {
     my TheSchwartz $client = shift;
@@ -956,6 +987,11 @@ A value indicating whether to utilize the job 'priority' field when selecting
 jobs to be processed. If unspecified, jobs will always be executed in a
 randomized order.
 
+=item * C<floor>
+
+A value indicating the minimum priority a job needs to be for this worker to 
+perform. If unspecified all jobs are considered.
+
 =item * C<driver_cache_expiration>
 
 Optional value to control how long database connections are cached for in seconds.
@@ -1043,6 +1079,10 @@ databases. All the given jobs are recorded in I<one> job database.
 =head2 C<$client-E<gt>set_prioritize( $prioritize )>
 
 Set the C<prioritize> value as described in the constructor.
+
+=head2 C<$client-E<gt>set_floor( $floor )>
+
+Set the C<fllor<gt> value as described in the constructor.
 
 =head1 WORKING
 

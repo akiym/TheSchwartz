@@ -6,13 +6,14 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => ( ( 31 * 3 ) + ( 16 * 3 ) );
+use Test::More tests => ( ( 31 * 3 ) + ( 16 * 3 ) + ( 12 * 3) );
 
 our $record_expected;
-our $test2 = 0;
+our $testnum = 0;
+our $floor = 3;
 
 run_tests(
-    47,
+    59,
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
@@ -48,7 +49,7 @@ run_tests(
         teardown_dbs('ts1');
 
         # test we get in jobid order for equal priority RT #99075
-        $test2 = 1;
+        $testnum = 1;
         my $client2 = test_client( dbs => ['ts2'] );
         $client2->set_prioritize(1);
         $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
@@ -83,7 +84,42 @@ run_tests(
         ok( !$rv, "nothing to do now 1-5" );
 
         teardown_dbs('ts2');
-        $test2 = 0;
+
+        # test floor RT #50842
+        $testnum = 2;
+
+        $client2 = test_client( dbs => ['ts3'] );
+        $client2->set_prioritize(1);
+        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
+
+        $client2->reset_abilities;
+        $client2->can_do("Worker::PriorityTest");
+
+        Worker::PriorityTest->set_client($client2);
+        $client2->set_prioritize(1);
+        $TheSchwartz::FIND_JOB_BATCH_SIZE = 1;
+        $client2->set_floor($floor);
+
+        for ( 1 .. 5 ) {
+            my $job = TheSchwartz::Job->new(
+                funcname => 'Worker::PriorityTest',
+                arg      => { num => $_ },
+                priority => $_,
+            );
+            my $h = $client2->insert($job);
+            ok( $h, "inserted job (priority $_)" );
+        }
+
+        for ( $floor .. 5 ) {
+            $record_expected = $_;
+            my $rv = eval { $client2->work_once; };
+            ok( $rv, "did stuff 3-5" );
+        }
+        $rv = eval { $client2->work_once; };
+        ok( !$rv, "sub-floor jobs remaining but you can't have them" );
+
+        teardown_dbs('ts3');
+        $testnum = 0;
     }
 );
 
@@ -100,9 +136,14 @@ sub work {
     my ( $class, $job ) = @_;
     my $priority = $job->priority;
 
-    if ($main::test2) {
+    if ($main::testnum == 1) {
         ok( $job->jobid == $main::record_expected,
             "order by ID for same priority"
+        );
+    }
+    elsif ($main::testnum == 2) {
+        ok( $job->priority >= $floor,
+            "check floor"
         );
     }
     else {
