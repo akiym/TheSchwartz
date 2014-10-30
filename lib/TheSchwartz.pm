@@ -201,6 +201,7 @@ sub list_jobs {
     if ( $client->floor ) {
         $terms{priority} = { op => '>=', value => $client->floor };
     }
+
     my @jobs;
     for my $hashdsn ( $client->shuffled_databases ) {
         ## If the database is dead, skip it

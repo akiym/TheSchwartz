@@ -219,16 +219,29 @@ sub permanent_failure {
 }
 
 sub declined {
-    my ($job) = @_;
+    my $job       = shift;
+    my $run_after = shift;
+
     if ( $job->did_something ) {
         $job->debug("can't call 'declined' on already finished job");
         return 0;
     }
-    $job->debug(
-        "job declined.  retry will be considered after lease is up at "
-            . $job->grabbed_until );
 
     $job->was_declined(1);
+
+    if ($run_after) {
+        $job->run_after($run_after);
+        $job->grabbed_until(0);
+        $job->driver->update($job);
+        $job->debug(
+            "job declined.  retry will be considered after lease is up at "
+                . $job->run_after );
+    }
+    else {
+        $job->debug(
+            "job declined.  retry will be considered after lease is up at "
+                . $job->grabbed_until );
+    }
 
     # we do nothing regarding the job's status
 }
@@ -539,11 +552,14 @@ C<failed()>, but that the job should I<not> be reattempted, no matter how many
 times the job has been attempted before. The job's exit status is thus recorded
 as C<$exit_status> (or C<1>), and the job is removed from the queue.
 
-=head2 C<$job-E<gt>declined()>
+=head2 C<$job-E<gt>declined([ $run_after ])>
 
 Report that the job has been declined for handling at this time, which means that
 the job will be retried after the next grabbed_until interval, and does not count
 against the max_retries count.
+
+If $run_after is set then the job will be grabbed_until will be reset and the job
+will be reconsidered at $run_after, and does not count against the max_retries count.
 
 =head2 C<$job-E<gt>replace_with( @jobs )>
 
