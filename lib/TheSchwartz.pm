@@ -173,14 +173,22 @@ sub lookup_job {
 sub list_jobs {
     my TheSchwartz $client = shift;
     my $arg = shift;
+
     my ( %terms, %options );
+
     $terms{run_after} = { op => '<=', value => $arg->{run_after} }
         if exists $arg->{run_after};
+
     $terms{grabbed_until} = { op => '<=', value => $arg->{grabbed_until} }
         if exists $arg->{grabbed_until};
+
+    $terms{jobid} = { op => '=', value => $arg->{jobid} }
+        if exists $arg->{jobid};
+
     die "No funcname" unless exists $arg->{funcname};
 
     $arg->{want_handle} = 1 unless defined $arg->{want_handle};
+
     my $limit = $arg->{limit} || $client->batch_size;
 
     if ( $arg->{coalesce} ) {
@@ -1058,6 +1066,11 @@ much faster since it is can do a btree index lookup
 
 if you want all your jobs to be set up using a handle.  defaults to true.
 this option might be removed, as you should always have this on a Job object.
+
+=item * C<jobid>
+
+if you want a specific job you can pass in it's ID and if it's available it
+will be listed.
 
 =back
 

@@ -7,10 +7,10 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => 54 * 3;
+use Test::More tests => ( 57 * 3 ) + 2;
 
 run_tests(
-    54,
+    57,
     sub {
         foreach my $pfx ( "", "testprefix_" ) {
 
@@ -47,6 +47,13 @@ run_tests(
             isa_ok $job, 'TheSchwartz::Job';
             is $job->funcname, 'feedmajor',
                 'recreated handle gives us the right job';
+
+            # grab an job by ID.
+            my $id   = $job->jobid;
+            my @jobs = $client->list_jobs(
+                { funcname => 'feedmajor', jobid => $id } );
+            is( scalar @jobs,    1,   'one job' );
+            is( $jobs[0]->jobid, $id, 'expected jobid' );
 
             $job = TheSchwartz::Job->new(
                 funcname  => 'feedmajor',

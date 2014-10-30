@@ -12,6 +12,7 @@
     - Added floor methods to limit priortity job selection. RT #50842
     - Add batch_size methods to expose FIND_JOB_BATCH_SIZE. RT #72815
     - Add run_after param to decline. RT #60797
+    - Add jobid param to list_jobs. 
 
 1.10 (2010-03-15)
     - Add $job->declined method for workers to be able to decline handling
