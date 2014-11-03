@@ -4,12 +4,12 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => 81;
+use Test::More tests => (5 + 21) * 3;
 
 our $decline = 1;
 
 run_tests(
-    8,
+    5,
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
@@ -80,7 +80,7 @@ run_tests(
     }
 );
 
-done_testing;
+done_testing();
 
 ############################################################################
 package Worker::CompleteEventually;

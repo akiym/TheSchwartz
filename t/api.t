@@ -7,10 +7,10 @@ use warnings;
 require 't/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => ( 57 * 3 ) + 2;
+use Test::More tests => 58 * 3;
 
 run_tests(
-    57,
+    58,
     sub {
         foreach my $pfx ( "", "testprefix_" ) {
 
@@ -137,3 +137,6 @@ run_tests(
         }
     }
 );
+
+done_testing();
+

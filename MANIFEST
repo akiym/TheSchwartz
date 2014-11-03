@@ -6,7 +6,7 @@ doc/notes.txt
 doc/schema-postgres.sql
 doc/schema.sql
 extras/check_schwartz
-extras/TheSchwartz.spec
+extras/perl-TheSchwartz.spec
 extras/thetop
 lib/TheSchwartz.pm
 lib/TheSchwartz/Error.pm

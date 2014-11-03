@@ -25,6 +25,7 @@ svn-commit.tmp
 \bBuild$
 \b_build/
 ^Notes.md$
+\bTheSchwartz-[\d\.\_]+
 
 # Avoid temp and backup files.
 ~$
