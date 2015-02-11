@@ -204,9 +204,9 @@ sub completed {
         $job->debug("can't call 'completed' on already finished job");
         return 0;
     }
-    $job->did_something(1);
     $job->set_exit_status(0);
     $job->driver->remove($job);
+    $job->did_something(1);
 }
 
 sub permanent_failure {
@@ -269,7 +269,6 @@ sub failed {
 
 sub _failed {
     my ( $job, $msg, $exit_status, $_retry, $failures ) = @_;
-    $job->did_something(1);
     $job->debug( "job failed: " . ( $msg || "<no message>" ) );
 
     ## Mark the failure in the error table.
@@ -287,6 +286,7 @@ sub _failed {
         $job->set_exit_status( $exit_status || 1 );
         $job->driver->remove($job);
     }
+    $job->did_something(1);
 }
 
 sub replace_with {

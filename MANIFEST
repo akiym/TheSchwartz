@@ -44,6 +44,7 @@ t/insert-and-do.t
 t/lib/db-common.pl
 t/parallel-workers.t
 t/priority.t
+t/replace-abort.t
 t/replace-with.t
 t/retry-delay.t
 t/schema-sqlite.sql

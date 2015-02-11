@@ -31,8 +31,13 @@ sub work_safely {
 
     my $cjob = $client->current_job;
     if ($errstr) {
+
+        # something went wrong, better make a rollback!
+        my $driver = $cjob->driver;
+        $driver->rollback;
+
         $job->debug("Eval failure: $errstr");
-        $cjob->failed($@);
+        $cjob->failed($errstr);
     }
     if ( !$cjob->was_declined && !$cjob->did_something ) {
         $cjob->failed(

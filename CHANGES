@@ -1,3 +1,7 @@
+UNRELEASED
+- Fix replace_job hanging & postgresql issues. RT #65712
+
+
 1.11 Mon Nov 03 2014
 - Move from Make to Module::Build
 - Remove inc & autobuild
