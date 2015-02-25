@@ -663,8 +663,8 @@ sub work_once {
     ## from our list of current abilities. So the next time we look for a
     ## we'll find a job for a different funcname. This prevents starvation of
     ## high funcid values because of the way MySQL's indexes work.
-## BUGBUG this is just ...
-##    $client->temporarily_remove_ability($class);
+## BUGBUG this looks odd since ordering by job_id should limit any skew ...
+    $client->temporarily_remove_ability($class) unless($client->{strict_remove_ability});
 
     $class->work_safely($job);
 
