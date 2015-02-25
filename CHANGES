@@ -1,6 +1,6 @@
 UNRELEASED
 - Fix replace_job hanging & postgresql issues. RT #65712
-
+- Add strict_remove_ability to prevent auto resetting of abilities.
 
 1.11 Mon Nov 03 2014
 - Move from Make to Module::Build

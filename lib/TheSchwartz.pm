@@ -4,9 +4,9 @@ package TheSchwartz;
 use 5.008;
 use strict;
 use fields
-    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor batch_size );
+    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor batch_size strict_remove_ability);
 
-our $VERSION = "1.11";
+our $VERSION = "1.12_1";
 
 use Carp qw( croak );
 use Data::ObjectDriver::Errors;
@@ -44,6 +44,8 @@ sub new {
     $client->{driver_cache_expiration} = delete $args{driver_cache_expiration}
         || 0;
     $client->{batch_size} = delete $args{batch_size} || $FIND_JOB_BATCH_SIZE;
+
+    $client->{strict_remove_ability} = delete $args{strict_remove_ability};
 
     my $floor = delete $args{floor};
     $client->set_floor($floor) if ($floor);
@@ -636,7 +638,8 @@ sub work_once {
 
     ## If we didn't find anything, restore our full abilities, and try
     ## again.
-    if ( !$job
+    if (   !$job
+        && !$client->{strict_remove_ability}
         && @{ $client->{current_abilities} } < @{ $client->{all_abilities} } )
     {
         $client->restore_full_abilities;
@@ -660,7 +663,8 @@ sub work_once {
     ## from our list of current abilities. So the next time we look for a
     ## we'll find a job for a different funcname. This prevents starvation of
     ## high funcid values because of the way MySQL's indexes work.
-    $client->temporarily_remove_ability($class);
+## BUGBUG this is just ...
+##    $client->temporarily_remove_ability($class);
 
     $class->work_safely($job);
 
@@ -1029,6 +1033,12 @@ connection set-up and tear-down time.
 The number of seconds after which to try reconnecting to apparently dead
 databases. If not given, TheSchwartz will retry connecting to databases after
 30 seconds.
+
+=item * C<strict_remove_ability>
+
+By default when work_once does not find a job it will reset current_abilities to
+all_abilities and look for a job. Setting this option will prevent work_once from
+resetting abilities if it can't find a job for the current capabilities.
 
 =back
 
