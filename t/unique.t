@@ -27,18 +27,6 @@ run_tests(
         $handle = $client->insert($job);
         isa_ok $handle, 'TheSchwartz::JobHandle';
 
-        # insert again (notably to same db) and see it fails
-        $job = TheSchwartz::Job->new(
-            funcname => 'feed',
-            uniqkey  => "major",
-        );
-        ok( $job, "made another feed major job" );
-        $handle = $client->insert($job);
-        ok( !$handle, 'no handle' );
-
-        # pg failes and marks the database as dead
-        $client->{retry_at} = {};
-
         # insert same uniqkey, but different func
         $job = TheSchwartz::Job->new(
             funcname => 'scratch',
@@ -47,6 +35,18 @@ run_tests(
         ok( $job, "made scratch major job" );
         $handle = $client->insert($job);
         isa_ok $handle, 'TheSchwartz::JobHandle';
+
+        # pg failes and marks the database as dead
+        $client->{retry_at} = {};
+
+        # insert again (notably to same db) and see it fails
+        $job = TheSchwartz::Job->new(
+            funcname => 'feed',
+            uniqkey  => "major",
+        );
+        ok( $job, "made another feed major job" );
+        $handle = $client->insert($job);
+        ok( !$handle, 'no handle' );
 
     }
 );

@@ -419,8 +419,16 @@ JOB:
             $server_time + ( $worker_class->grab_for || 1 ) );
 
         ## Update the job in the database, and end the transaction.
-        if ( $driver->update( $job, { grabbed_until => $old_grabbed_until } )
-            < 1 )
+        ## NOTE: For some reason, D::OD doesn't ensure the object's value is
+        ##       in bounds of original search query. so we need to be more paranoic
+        ##       to make sure it's not grabbed by other workers.
+        my $unixtime = $driver->dbd->sql_for_unixtime;
+        if ( $driver->update( $job, {
+            grabbed_until => [
+                '-and',
+                { op => '=', value => $old_grabbed_until},
+                \" <= $unixtime"
+            ]}) < 1 )
         {
             ## We lost the race to get this particular job--another worker must
             ## have got it and already updated it. Move on to the next job.
