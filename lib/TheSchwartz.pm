@@ -6,7 +6,7 @@ use strict;
 use fields
     qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor batch_size strict_remove_ability);
 
-our $VERSION = "1.12_1";
+our $VERSION = "1.12_2";
 
 use Carp qw( croak );
 use Data::ObjectDriver::Errors;
@@ -887,6 +887,16 @@ sub set_current_job {
     $client->{current_job} = shift;
 }
 
+sub strict_remove_ability {
+    my TheSchwartz $client = shift;
+    return $client->{strict_remove_ability};
+}
+
+sub set_strict_remove_ability {
+    my TheSchwartz $client = shift;
+    $client->{strict_remove_ability} = shift;
+}
+
 DESTROY {
     foreach my $arg (@_) {
 
@@ -1134,6 +1144,10 @@ Set the C<floor<gt> value as described in the constructor.
 =head2 C<$client-E<gt>set_batch_size( $batch_size )>
 
 Set the C<batch_size<gt> value as described in the constructor.
+
+=head2 C<$client-E<gt>set_strict_remove_ability( $strict_remove_ability )>
+
+Set the C<strict_remove_ability<gt> value as described in the constructor.
 
 =head1 WORKING
 
