@@ -1,4 +1,4 @@
-UNRELEASED
+1.12 Mon Mar 30 2015
 - Fix replace_job hanging & postgresql issues. RT #65712
 - Add strict_remove_ability to prevent auto resetting of abilities.
 - Stricter job check. https://github.com/jfearn/TheSchwartz/pull/1
