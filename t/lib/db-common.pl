@@ -78,11 +78,11 @@ sub test_client {
                         AutoCommit => 1,
                     }
                 ) or die $DBI::errstr;
-                my $driver
-                    = Data::ObjectDriver::Driver::DBI->new(
+                my $driver = Data::ObjectDriver::Driver::DBI->new(
                     $ENV{USE_GET_DBH_FOR_TEST}
                     ? ( get_dbh => sub {$dbh} )
-                    : ( dbh => $dbh ) );
+                    : ( dbh => $dbh )
+                );
                 push @tmp, { driver => $driver, prefix => $pfx };
             };
         }
@@ -238,6 +238,18 @@ sub load_sql {
     my $sql = do { local $/; <$fh> };
     close $fh;
     split /;\s*/, $sql;
+}
+
+sub query_sql {
+    my ( $dbh, $sql ) = @_;
+    my ( $query, $bind ) = ref($sql) ? @$sql : ( $sql, [] );
+    my $sth = $dbh->prepare($sql);
+    my $i   = 0;
+    $sth->bind_param( ++$i, $_ ) for @$bind;
+    $sth->execute;
+    $sth->bind_columns( \my $result );
+    $sth->fetch;
+    return $result;
 }
 
 1;

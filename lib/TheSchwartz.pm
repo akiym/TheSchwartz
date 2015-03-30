@@ -4,9 +4,9 @@ package TheSchwartz;
 use 5.008;
 use strict;
 use fields
-    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor batch_size );
+    qw( databases retry_seconds dead_dsns retry_at funcmap_cache verbose all_abilities current_abilities current_job cached_drivers driver_cache_expiration scoreboard prioritize floor batch_size strict_remove_ability);
 
-our $VERSION = "1.11";
+our $VERSION = "1.12";
 
 use Carp qw( croak );
 use Data::ObjectDriver::Errors;
@@ -44,6 +44,8 @@ sub new {
     $client->{driver_cache_expiration} = delete $args{driver_cache_expiration}
         || 0;
     $client->{batch_size} = delete $args{batch_size} || $FIND_JOB_BATCH_SIZE;
+
+    $client->{strict_remove_ability} = delete $args{strict_remove_ability};
 
     my $floor = delete $args{floor};
     $client->set_floor($floor) if ($floor);
@@ -134,6 +136,7 @@ sub mark_database_as_dead {
     my ($hashdsn) = @_;
     $client->{dead_dsns}{$hashdsn} = 1;
     $client->{retry_at}{$hashdsn}  = time + $client->{retry_seconds};
+    $client->debug("Disabling DB $hashdsn because " . ($client->driver_for($hashdsn)->last_error() || 'unknown'));
 }
 
 sub is_database_dead {
@@ -644,7 +647,8 @@ sub work_once {
 
     ## If we didn't find anything, restore our full abilities, and try
     ## again.
-    if ( !$job
+    if (   !$job
+        && !$client->{strict_remove_ability}
         && @{ $client->{current_abilities} } < @{ $client->{all_abilities} } )
     {
         $client->restore_full_abilities;
@@ -668,7 +672,8 @@ sub work_once {
     ## from our list of current abilities. So the next time we look for a
     ## we'll find a job for a different funcname. This prevents starvation of
     ## high funcid values because of the way MySQL's indexes work.
-    $client->temporarily_remove_ability($class);
+## BUGBUG this looks odd since ordering by job_id should limit any skew ...
+    $client->temporarily_remove_ability($class) unless($client->{strict_remove_ability});
 
     $class->work_safely($job);
 
@@ -883,6 +888,16 @@ sub set_current_job {
     $client->{current_job} = shift;
 }
 
+sub strict_remove_ability {
+    my TheSchwartz $client = shift;
+    return $client->{strict_remove_ability};
+}
+
+sub set_strict_remove_ability {
+    my TheSchwartz $client = shift;
+    $client->{strict_remove_ability} = shift;
+}
+
 DESTROY {
     foreach my $arg (@_) {
 
@@ -1038,6 +1053,12 @@ The number of seconds after which to try reconnecting to apparently dead
 databases. If not given, TheSchwartz will retry connecting to databases after
 30 seconds.
 
+=item * C<strict_remove_ability>
+
+By default when work_once does not find a job it will reset current_abilities to
+all_abilities and look for a job. Setting this option will prevent work_once from
+resetting abilities if it can't find a job for the current capabilities.
+
 =back
 
 =head2 C<$client-E<gt>list_jobs( %args )>
@@ -1124,6 +1145,10 @@ Set the C<floor<gt> value as described in the constructor.
 =head2 C<$client-E<gt>set_batch_size( $batch_size )>
 
 Set the C<batch_size<gt> value as described in the constructor.
+
+=head2 C<$client-E<gt>set_strict_remove_ability( $strict_remove_ability )>
+
+Set the C<strict_remove_ability<gt> value as described in the constructor.
 
 =head1 WORKING
 

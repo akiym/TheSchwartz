@@ -45,7 +45,6 @@ run_tests(
         my $jobs2b = $db1->selectrow_array(
             "SELECT COUNT(*) FROM job WHERE funcid=2");
         is( $jobs2b, $n_jobs - $do_jobs, "have half funcid 2s" );
-
     }
 );
 
