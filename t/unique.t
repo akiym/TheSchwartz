@@ -16,6 +16,8 @@ run_tests(
     6,
     sub {
         my $client = test_client( dbs => ['ts1'] );
+        $client->set_verbose(1);
+
         my ( $job, $handle );
 
         # insert a job with unique
@@ -47,6 +49,5 @@ run_tests(
         ok( $job, "made another feed major job" );
         $handle = $client->insert($job);
         ok( !$handle, 'no handle' );
-
     }
 );

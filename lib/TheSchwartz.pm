@@ -136,6 +136,7 @@ sub mark_database_as_dead {
     my ($hashdsn) = @_;
     $client->{dead_dsns}{$hashdsn} = 1;
     $client->{retry_at}{$hashdsn}  = time + $client->{retry_seconds};
+    $client->debug("Disabling DB $hashdsn because " . ($client->driver_for($hashdsn)->last_error() || 'unknown'));
 }
 
 sub is_database_dead {
