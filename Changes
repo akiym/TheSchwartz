@@ -1,5 +1,11 @@
 {{$NEXT}}
 
+1.13 2019-08-07T16:28:14Z
+
+    - the module maintainer has been changed to Takumi Akiyama (AKIYM)
+    - fix tests fail without '.'  in @INC. RT #124610
+    - require perl-5.8.1 or later
+
 1.12 Mon Mar 30 2015
 - Fix replace_job hanging & postgresql issues. RT #65712
 - Add strict_remove_ability to prevent auto resetting of abilities.
