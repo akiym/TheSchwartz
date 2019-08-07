@@ -45,7 +45,7 @@
             "Data::ObjectDriver" : "0.04",
             "Digest::MD5" : "0",
             "Storable" : "0",
-            "perl" : "5.008"
+            "perl" : "5.008001"
          }
       },
       "test" : {
