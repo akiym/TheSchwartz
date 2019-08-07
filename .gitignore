@@ -6,7 +6,14 @@ cover_db/
 TheSchwartz*.tar.gz
 MYMETA.yml
 MYMETA.json
-META.json
 META.yml
 *.bak
 Notes.md
+/TheSchwartz-*
+/.build
+/_build_params
+/Build
+/Build.bat
+!Build/
+!META.json
+!LICENSE
