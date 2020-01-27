@@ -13,6 +13,7 @@ run_tests(
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
+        {
         my @keys = qw(foo bar baz);
         my $n    = 0;
         for ( 1 .. 10 ) {
@@ -37,6 +38,9 @@ run_tests(
         }
         my $rv = eval { $client->work_once; };
         ok( !$rv, "nothing to do now" );
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

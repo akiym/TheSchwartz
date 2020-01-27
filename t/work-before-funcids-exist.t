@@ -14,6 +14,7 @@ run_tests(
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
+        {
         my $handle = $client->insert("Worker::Dummy");
         ok( $handle, "inserted job" );
 
@@ -23,6 +24,9 @@ run_tests(
         $client->work_until_done;
 
         ok( !$handle->is_pending, "job is done" );
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

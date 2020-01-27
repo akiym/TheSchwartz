@@ -13,6 +13,7 @@ run_tests(
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
+        {
         my $job2h;
         for ( 1 .. 2 ) {
             my $job = TheSchwartz::Job->new(
@@ -37,6 +38,9 @@ run_tests(
 
         # the second one should have failures:
         is( $job2h->failures, 1, "1 failure on second job" );
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

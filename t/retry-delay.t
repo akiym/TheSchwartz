@@ -42,6 +42,8 @@ run_tests(
             is( $handle->exit_status, 0, "job succeeded" );
         }
 
+        $client->set_current_job(undef);
+
         teardown_dbs('ts1');
     }
 );

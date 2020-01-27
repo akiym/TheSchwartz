@@ -12,6 +12,7 @@ run_tests_pgsql(13, sub {
     my $client1 = test_client(dbs => ['ts1']);
     my $client2 = test_client(dbs => ['ts1']);
 
+    {
     my $driver = $client1->driver_for( ($client1->shuffled_databases)[0] );
     my $dbh = $driver->rw_handle;
 
@@ -137,6 +138,13 @@ run_tests_pgsql(13, sub {
         0,
         'Job 3 erneut abgearbeitet',
     );
+
+    }
+
+    $client1->set_current_job(undef);
+    $client2->set_current_job(undef);
+
+    teardown_dbs('ts1');
 });
 
 

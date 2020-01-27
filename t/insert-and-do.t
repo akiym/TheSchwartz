@@ -115,6 +115,8 @@ run_tests(
             );
         }
 
+        $client->set_current_job(undef);
+
         teardown_dbs('ts1');
     }
 );

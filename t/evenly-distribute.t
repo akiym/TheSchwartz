@@ -14,6 +14,7 @@ run_tests(
     sub {
         my $client = test_client( dbs => [ 'ts1', 'ts2' ] );
 
+        {
         my $n_jobs = 60;
         for ( 1 .. $n_jobs ) {
             my $handle = $client->insert("Worker::Foo");
@@ -54,6 +55,9 @@ run_tests(
 
         # difference in work done:
         my $workdiff = abs( $jobs1d - $jobs2d );
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs( 'ts1', 'ts2' );
     }

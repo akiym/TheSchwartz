@@ -33,6 +33,8 @@ run_tests(
                 "didn't get a job, because job is 'held' not retrying" );
         }
 
+        $client->set_current_job(undef);
+
         teardown_dbs('ts1');
     }
 );
@@ -75,6 +77,8 @@ run_tests(
                 ok( $rv, "end stuff 1-5" );
             }
         }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts2');
     }

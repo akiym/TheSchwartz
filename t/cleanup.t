@@ -17,6 +17,8 @@ run_tests(
     10,
     sub {
         my $client = test_client( dbs => ['ts1'] );
+
+        {
         my $dbh = DBI->connect( dsn_for("ts1"), $ENV{TS_DB_USER},
             $ENV{TS_DB_PASS} );
         $client->can_do("Worker::Fail");
@@ -63,6 +65,9 @@ run_tests(
             is( $min,  3, "error jobid is only the new one" );
 
         }
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

@@ -13,6 +13,7 @@ run_tests(
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
+        {
         my $handle = $client->insert( "Worker::Foo", { cluster => 'all' } );
         ok($handle);
 
@@ -31,6 +32,9 @@ run_tests(
         $job = $handle->job;
         $job->replace_with();
         ok( !$handle->is_pending, "job no longer pending" );
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

@@ -13,11 +13,15 @@ run_tests(
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
+        {
         my $driver
             = $client->driver_for( ( $client->shuffled_databases )[0] );
         isa_ok $driver, 'Data::ObjectDriver::Driver::DBI';
 
         cmp_ok $client->get_server_time($driver), '>', 0, 'got server time';
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

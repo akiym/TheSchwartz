@@ -13,6 +13,7 @@ run_tests(
     sub {
         my $client = test_client( dbs => ['ts1'] );
 
+        {
         my $available
             = TheSchwartz::Job->new( funcname => 'Worker::Grabber', );
         my $grabbed_until = time + 2;
@@ -41,6 +42,9 @@ run_tests(
         $rv = $client->grab_and_work_on( $available_handle->as_string );
         is scalar $available->failure_log, 0, "no errors";
         ok( !$rv, "There is nothing to do for it now." );
+        }
+
+        $client->set_current_job(undef);
 
         teardown_dbs('ts1');
     }

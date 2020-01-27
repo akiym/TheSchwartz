@@ -76,6 +76,8 @@ run_tests(
                 'Scoreboard file goes away when worker finishes' );
         }
 
+        $client->set_current_job(undef);
+
         teardown_dbs('ts1');
     }
 );
