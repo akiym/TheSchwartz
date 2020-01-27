@@ -39,9 +39,10 @@ run_tests(
 
         my $sb_file = $client->scoreboard;
         {
-            ( undef, my ( $sb_dir, $sb_name ) )
+            my ( $sb_volume, $sb_dir, $sb_name )
                 = File::Spec->splitpath($sb_file);
-            ok( -e $sb_dir, "Looking for dir $sb_dir" );
+            ok( -e File::Spec->catpath( $sb_volume, $sb_dir ),
+                "Looking for dir $sb_dir" );
         }
 
         {
