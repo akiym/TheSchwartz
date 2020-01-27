@@ -4,7 +4,7 @@ use warnings;
 require './t/lib/db-common.pl';
 
 use TheSchwartz;
-use Test::More tests => (5 + 21) * 3;
+use Test::More tests => ( 5 + 21 ) * 3;
 
 our $decline = 1;
 

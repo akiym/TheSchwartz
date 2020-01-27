@@ -33,7 +33,7 @@ run_tests(
                         pass   => $ENV{TS_DB_PASS},
                         prefix => $pfx,
                     }
-                    } @$dbs
+                } @$dbs
             ]
         );
 
@@ -62,7 +62,7 @@ run_tests(
             my %info = map { chomp; /^([^=]+)=(.*)$/ } <FH>;
             close(FH);
 
-            ok( $info{pid} == $$, 'Has our PID' );
+            ok( $info{pid} == $$,                      'Has our PID' );
             ok( $info{funcname} eq 'Worker::Addition', 'Has our funcname' );
             ok( $info{started} =~ /\d+/, 'Started time is a number' );
             ok( $info{started} <= time, 'Started time is in the past' );
