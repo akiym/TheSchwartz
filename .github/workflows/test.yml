@@ -11,8 +11,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'macOS-latest']
+        os: ['ubuntu-latest', 'macOS-latest', 'windows-latest']
         perl: [ '5.30', '5.28', '5.10', '5.8' ]
+        exclude:
+          # not supported on actions-setup-perl
+          - os: windows-latest
+            perl: '5.10'
+          # installing Module::Build::Tiny failed
+          - os: windows-latest
+            perl: '5.8'
     name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v1
