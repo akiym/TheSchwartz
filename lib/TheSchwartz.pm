@@ -27,6 +27,7 @@ our $T_LOST_RACE;
 
 ## Number of jobs to fetch at a time in find_job_for_workers.
 our $FIND_JOB_BATCH_SIZE = 50;
+our $RANDOMIZE_JOBS = 1;
 
 sub new {
     my TheSchwartz $client = shift;
@@ -400,7 +401,7 @@ sub _grab_a_job {
     my $driver             = $client->driver_for($hashdsn);
 
     ## Got some jobs! Randomize them to avoid contention between workers.
-    my @jobs = shuffle(@_);
+    my @jobs = $RANDOMIZE_JOBS ? shuffle(@_) : @_;
 
 JOB:
     while ( my $job = shift @jobs ) {
