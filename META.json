@@ -4,7 +4,7 @@
       ", Six Apart Ltd, cpan@sixapart.com. All"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Minilla/v3.1.11, CPAN::Meta::Converter version 2.150010",
+   "generated_by" : "Minilla/v3.1.12, CPAN::Meta::Converter version 2.150010",
    "license" : [
       "perl_5"
    ],
@@ -67,7 +67,7 @@
          "web" : "https://github.com/akiym/TheSchwartz"
       }
    },
-   "version" : "1.16",
+   "version" : "1.17",
    "x_authority" : "cpan:AKIYM",
    "x_contributors" : [
       "Akira Sawada <akira@peatix.com>",
@@ -78,7 +78,8 @@
       "Kenichi Ishigaki <ishigaki@cpan.org>",
       "Mohammad S Anwar <mohammad.anwar@yahoo.com>",
       "Six Apart Ltd. <cpan@sixapart.com>",
-      "Takumi Akiyama <t.akiym@gmail.com>"
+      "Takumi Akiyama <t.akiym@gmail.com>",
+      "Todd Wade <waveright@gmail.com>"
    ],
    "x_serialization_backend" : "JSON::PP version 4.04",
    "x_static_install" : 1
