@@ -1252,7 +1252,7 @@ out of scope)
 
 =head1 PASSING IN AN EXISTING DRIVER
 
-You can pass in a existing C<Data::Object::Driver::DBI> object which also allows you
+You can pass in a existing L<Data::ObjectDriver> object which also allows you
 to reuse exist Database handles like so:
 
         my $dbh = DBI->connect( $dsn, "root", "", {
