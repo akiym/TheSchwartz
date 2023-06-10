@@ -1182,7 +1182,7 @@ Given a job handle (a scalar string) I<$handle>, runs the job, then returns.
 
 =head2 C<$client-E<gt>grab_and_work_on($handle)>
 
-Similar to L<$client-E<gt>work_on($handle)>, except that the job will be grabbed
+Similar to L</$client-E<gt>work_on($handle)>, except that the job will be grabbed
 before being run. It guarantees that only one worker will work on it (at least
 in the C<grab_for> interval).
 
